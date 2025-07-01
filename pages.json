@@ -1,0 +1,22 @@
+{
+	"pages": [
+		{
+			"path": "pages/Login/index",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/Home/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationStyle": "custom",
+		"navigationBarTextStyle": "black",
+		"backgroundColor": "#FFFFFF"
+	},
+	"uniIdRouter": {}
+}

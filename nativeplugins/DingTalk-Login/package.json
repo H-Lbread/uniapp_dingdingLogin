@@ -1,0 +1,57 @@
+{
+    "name": "DingTalk-Login",
+    "id": "DingTalk-Login",
+    "version": "1.0.0",
+    "description": "钉钉登录插件",
+    "_dp_type": "nativeplugin",
+    "_dp_nativeplugin": {
+        "android": {
+            "integrateType": "aar",
+            "plugins": [
+                {
+                    "type": "module",
+                    "name": "DingTalk-Login",
+                    "class": "com.dingtalk.android.DingTalkLoginPlugin"
+                }
+            ],
+            "dependencies": [
+                "com.android.dingtalk.sdk:ddshare:2.1.2"
+            ],
+            "compileOptions": {
+                "sourceCompatibility": "1.8",
+                "targetCompatibility": "1.8"
+            },
+            "minSdkVersion": "21",
+            "repositories": [
+                {
+                    "type": "maven",
+                    "url": "https://maven.aliyun.com/repository/public"
+                }
+            ],
+            "abis": [
+                "armeabi-v7a",
+                "arm64-v8a"
+            ]
+        },
+        "ios": {
+            "plugins": [
+                {
+                    "type": "module",
+                    "name": "DingTalk-Login",
+                    "class": "DingTalkLoginPlugin"
+                }
+            ],
+            "integrateType": "framework",
+            "frameworks": [
+                "DTShareKit.framework"
+            ],
+            "embedFrameworks": [
+                "DTShareKit.framework"
+            ],
+            "deploymentTarget": "9.0",
+            "resources": [
+                "DTShareKit.bundle"
+            ]
+        }
+    }
+} 
