@@ -22,13 +22,15 @@ export function removeToken() {
 // 检查是否需要登录
 export function checkPermission(url) {
 	// 在白名单中直接通过
-	if (whiteList.indexOf(url) !== -1) {
-		return true
-	}
-	// 有token就通过
-	if (getToken()) {
-		return true
-	}
-	// 其他情况都需要登录
-	return false
+	// if (whiteList.indexOf(url) !== -1) {
+	// 	return true
+	// }
+	// // 有token就通过
+	// if (getToken()) {
+	// 	return true
+	// }
+	// // 其他情况都需要登录
+	// return false
+	
+	return true
 } 

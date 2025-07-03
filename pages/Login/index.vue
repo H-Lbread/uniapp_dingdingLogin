@@ -223,6 +223,7 @@
 			// 从URL中提取code
 			getCodeFromUrl(url) {
 				const match = url.match(/[?&]code=([^&]+)/);
+				console.log('match', match);
 				return match ? match[1] : null;
 			},
 			// 钉钉登录获取到code后，调用服务端接口

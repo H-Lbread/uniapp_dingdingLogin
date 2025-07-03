@@ -1,5 +1,6 @@
 const http = require('http');
 const os = require('os');
+const axios = require('axios');
 
 // 获取本机IP地址
 function getLocalIP() {
@@ -45,57 +46,50 @@ const server = http.createServer((req, res) => {
                 }
                 
                 // 主函数
-                function handleCallback() {
+                async function handleCallback() {
                     const code = getUrlParam('code');
                     console.log('获取到钉钉授权码：', code);
                     
                     if (code) {
                         // 显示成功信息
-                        document.getElementById('message').innerHTML = '授权成功，正在处理...';
+                        document.getElementById('message').innerHTML = '授权成功，正在获取用户信息...';
                         
-                        // 创建一个隐藏的iframe用于通信
-                        const iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                        
-                        // 尝试多种方式发送消息
                         try {
-                            // 1. 尝试使用uni-app的方式
-                            if (window.plus) {
-                                window.plus.message.createMessage({
-                                    type: 'dingtalk_code',
-                                    code: code
-                                });
+                            // 调用登录接口获取用户信息
+                            const response = await fetch('http://localhost:3000/api/dingtalk/login', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ authCode: code })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.code === 0) {
+                                // 显示用户信息
+                                document.getElementById('message').innerHTML = 
+                                    '<h4>登录成功！</h4>' +
+                                    '<pre style="text-align: left; margin: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">' + 
+                                    JSON.stringify(result.data, null, 2) +
+                                    '</pre>' +
+                                    '<button onclick="window.close()">关闭页面</button>';
+                                
+                                // 存储用户信息
+                                localStorage.setItem('userInfo', JSON.stringify(result.data));
+                            } else {
+                                throw new Error(result.msg || '获取用户信息失败');
                             }
-                            
-                            // 2. 尝试向父窗口发送消息
-                            window.parent.postMessage({
-                                type: 'dingtalk_code',
-                                code: code
-                            }, '*');
-                            
-                            // 3. 尝试向opener发送消息
-                            if (window.opener) {
-                                window.opener.postMessage({
-                                    type: 'dingtalk_code',
-                                    code: code
-                                }, '*');
-                            }
-                            
-                            // 4. 存储code到localStorage
-                            localStorage.setItem('dingtalk_code', code);
-                            
-                            // 5. 显示成功信息，并提供手动返回按钮
-                            document.getElementById('message').innerHTML = '授权成功！<br/><button onclick="window.close()">关闭页面</button>';
                             
                         } catch (e) {
-                            console.error('发送消息失败：', e);
-                            // 显示code，让用户可以手动复制
+                            console.error('获取用户信息失败：', e);
                             document.getElementById('message').innerHTML = 
-                                '授权成功，请复制以下授权码并返回APP：<br/>' +
+                                '<h4 style="color: red;">获取用户信息失败</h4>' +
+                                '<p>错误信息：' + e.message + '</p>' +
+                                '<p>授权码：</p>' +
                                 '<textarea onclick="this.select()" style="width: 100%; margin: 10px 0;">' + 
                                 code + 
-                                '</textarea><br/>' +
+                                '</textarea>' +
                                 '<button onclick="window.close()">关闭页面</button>';
                         }
                     } else {
@@ -122,6 +116,10 @@ const server = http.createServer((req, res) => {
                         padding: 10px;
                         border: 1px solid #ddd;
                         border-radius: 4px;
+                    }
+                    pre {
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
                     }
                 </style>
             </head>

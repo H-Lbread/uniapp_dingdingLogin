@@ -1,15 +1,44 @@
 {
+	"tabBar": {
+		"list": [
+			{
+				"pagePath": "pages/Home/index",
+				"text": "首页",
+				"iconPath": "",
+				"selectedIconPath": ""
+			},
+			{
+				"pagePath": "pages/User/index",
+				"text": "我的",
+				"iconPath": "",
+				"selectedIconPath": ""
+			}
+		]
+	},
 	"pages": [
 		{
 			"path": "pages/Login/index",
-			"style": {
-				"navigationBarTitleText": "登录"
-			}
+			"style": {}
 		},
 		{
 			"path": "pages/Home/index",
+			"style": {}
+		},
+		{
+			"path": "pages/User/index",
+			"style": {}
+		},
+		{
+			"path": "pages/Auth/index",
 			"style": {
-				"navigationBarTitleText": "首页"
+				"navigationBarTitleText": "授权登录"
+			}
+		},
+		{
+			"path": "pages/WebView/index",
+			"style": {
+				"navigationBarTitleText": "钉钉登录",
+				"navigationStyle": "default"
 			}
 		}
 	],

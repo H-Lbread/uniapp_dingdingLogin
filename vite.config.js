@@ -15,5 +15,10 @@ export default defineConfig({
       '@mixins': resolve(__dirname, './mixins'),
       '@static': resolve(__dirname, './static'),
     }
-  }
+  },
+  // server: {
+  //   host: '192.168.6.91',
+  //   port: 3000,
+  //   open: true // 自动打开浏览器
+  // }
 }) 

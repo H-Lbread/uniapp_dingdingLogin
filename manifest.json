@@ -42,14 +42,16 @@
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
                     "<uses-permission android:name=\"android.permission.QUERY_ALL_PACKAGES\"/>"
                 ],
-                "schemes": "okapp",
-                "abiFilters" : [ "armeabi-v7a", "arm64-v8a", "x86" ]
+                "schemes": "dtaokaiapp",
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a", "x86" ],
+                "packagename": "com.aokai.app"
             },
             /* ios打包配置 */
             "ios" : {
                 "dSYMs" : false,
-                "schemes": "okapp",
-                "urltypes" : "okapp"
+                "schemes": "dtaokaiapp",
+                "urlschemewhitelist": ["dingtalk", "dtaokaiapp"],
+                "bundleId": "com.aokai.app"
             },
             /* SDK配置 */
             "sdkConfigs" : {

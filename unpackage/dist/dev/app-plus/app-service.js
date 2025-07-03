@@ -38,10 +38,6 @@ if (uni.restoreGlobal) {
       console[type].apply(console, [...args, filename]);
     }
   }
-  const whiteList = [
-    "/pages/Login/index"
-    // '/pages/Home/index',
-  ];
   function getToken() {
     return uni.getStorageSync("token");
   }
@@ -52,18 +48,10 @@ if (uni.restoreGlobal) {
     uni.removeStorageSync("token");
   }
   function checkPermission(url) {
-    if (whiteList.indexOf(url) !== -1) {
-      return true;
-    }
-    if (getToken()) {
-      return true;
-    }
-    return false;
+    return true;
   }
   const _imports_0 = "/static/login/logo.png";
-  const _imports_1 = "/static/login/user.png";
-  const _imports_2 = "/static/login/password.png";
-  const _imports_3 = "/static/login/dingding.png";
+  const _imports_1 = "/static/login/dingding.png";
   const _export_sfc = (sfc, props) => {
     const target = sfc.__vccOpts || sfc;
     for (const [key, val] of props) {
@@ -71,7 +59,7 @@ if (uni.restoreGlobal) {
     }
     return target;
   };
-  const _sfc_main$2 = {
+  const _sfc_main$5 = {
     data() {
       var _a;
       const currentUrl = ((_a = window == null ? void 0 : window.location) == null ? void 0 : _a.href) || "";
@@ -164,12 +152,13 @@ if (uni.restoreGlobal) {
               this.showWebView = true;
             }
             uni.hideLoading();
+            this.startCheckAuthStatus();
           });
           setTimeout(() => {
             uni.hideLoading();
           }, 5e3);
         } catch (error) {
-          formatAppLog("error", "at pages/Login/index.vue:172", "打开钉钉登录出错：", error);
+          formatAppLog("error", "at pages/Login/index.vue:175", "打开钉钉登录出错：", error);
           uni.hideLoading();
           uni.showToast({
             title: "打开钉钉失败，请重试",
@@ -181,30 +170,30 @@ if (uni.restoreGlobal) {
       // H5端钉钉登录
       dingdingH5Login() {
         const url = `https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=${this.dingConfig.appId}&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=${this.dingConfig.redirectUri}`;
-        formatAppLog("log", "at pages/Login/index.vue:185", "H5钉钉登录URL:", url);
+        formatAppLog("log", "at pages/Login/index.vue:188", "H5钉钉登录URL:", url);
         window.location.href = url;
       },
       // 处理WebView消息
       handleWebViewMessage(event) {
-        formatAppLog("log", "at pages/Login/index.vue:190", "收到WebView消息：", event);
+        formatAppLog("log", "at pages/Login/index.vue:193", "收到WebView消息：", event);
         try {
           const { data } = event;
           if (data.url && data.url.includes("code=")) {
-            formatAppLog("log", "at pages/Login/index.vue:197", "从URL中检测到code");
+            formatAppLog("log", "at pages/Login/index.vue:200", "从URL中检测到code");
             const code = this.getCodeFromUrl(data.url);
             if (code) {
-              formatAppLog("log", "at pages/Login/index.vue:200", "成功获取到code:", code);
+              formatAppLog("log", "at pages/Login/index.vue:203", "成功获取到code:", code);
               this.showWebView = false;
               this.dingLoginToServer(code);
             }
           }
           if (data.type === "dingtalk_code" && data.code) {
-            formatAppLog("log", "at pages/Login/index.vue:208", "从消息中获取到code:", data.code);
+            formatAppLog("log", "at pages/Login/index.vue:211", "从消息中获取到code:", data.code);
             this.showWebView = false;
             this.dingLoginToServer(data.code);
           }
         } catch (error) {
-          formatAppLog("error", "at pages/Login/index.vue:213", "处理WebView消息出错：", error);
+          formatAppLog("error", "at pages/Login/index.vue:216", "处理WebView消息出错：", error);
           uni.showToast({
             title: "处理登录信息失败",
             icon: "none"
@@ -214,11 +203,12 @@ if (uni.restoreGlobal) {
       // 从URL中提取code
       getCodeFromUrl(url) {
         const match = url.match(/[?&]code=([^&]+)/);
+        formatAppLog("log", "at pages/Login/index.vue:226", "match", match);
         return match ? match[1] : null;
       },
       // 钉钉登录获取到code后，调用服务端接口
       dingLoginToServer(authCode) {
-        formatAppLog("log", "at pages/Login/index.vue:227", "获取到钉钉授权码：", authCode);
+        formatAppLog("log", "at pages/Login/index.vue:231", "获取到钉钉授权码：", authCode);
         uni.showLoading({
           title: "登录中..."
         });
@@ -255,10 +245,45 @@ if (uni.restoreGlobal) {
       },
       handleRememberPwdChange(e) {
         this.rememberPwd = e.detail.value;
+      },
+      // 开始检查授权状态
+      startCheckAuthStatus() {
+        formatAppLog("log", "at pages/Login/index.vue:278", "开始检查授权状态");
+        this.checkAuthTimer = setInterval(() => {
+          try {
+            const code = localStorage.getItem("dingtalk_code");
+            if (code) {
+              formatAppLog("log", "at pages/Login/index.vue:283", "检测到授权码：", code);
+              clearInterval(this.checkAuthTimer);
+              localStorage.removeItem("dingtalk_code");
+              this.dingLoginToServer(code);
+            }
+          } catch (error) {
+            formatAppLog("error", "at pages/Login/index.vue:289", "检查授权状态出错：", error);
+          }
+        }, 1e3);
+        setTimeout(() => {
+          if (this.checkAuthTimer) {
+            clearInterval(this.checkAuthTimer);
+            this.checkAuthTimer = null;
+            uni.showToast({
+              title: "登录超时，请重试",
+              icon: "none",
+              duration: 2e3
+            });
+          }
+        }, 6e4);
+      },
+      // 在组件销毁时清理定时器
+      beforeDestroy() {
+        if (this.checkAuthTimer) {
+          clearInterval(this.checkAuthTimer);
+          this.checkAuthTimer = null;
+        }
       }
     }
   };
-  function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$4(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { class: "content" }, [
       vue.createElementVNode("image", {
         class: "logo",
@@ -266,10 +291,7 @@ if (uni.restoreGlobal) {
       }),
       vue.createElementVNode("view", { class: "login-form" }, [
         vue.createElementVNode("view", { class: "input-item" }, [
-          vue.createElementVNode("image", {
-            class: "icon",
-            src: _imports_1
-          }),
+          vue.createCommentVNode(' <image class="icon" src="@/static/login/user.png"></image> '),
           vue.withDirectives(vue.createElementVNode(
             "input",
             {
@@ -285,10 +307,7 @@ if (uni.restoreGlobal) {
           ])
         ]),
         vue.createElementVNode("view", { class: "input-item" }, [
-          vue.createElementVNode("image", {
-            class: "icon",
-            src: _imports_2
-          }),
+          vue.createCommentVNode(' <image class="icon" src="@/static/login/password.png"></image> '),
           vue.withDirectives(vue.createElementVNode(
             "input",
             {
@@ -320,7 +339,7 @@ if (uni.restoreGlobal) {
           vue.createElementVNode("view", { class: "other-icons" }, [
             vue.createElementVNode("image", {
               class: "other-icon",
-              src: _imports_3,
+              src: _imports_1,
               onClick: _cache[4] || (_cache[4] = (...args) => $options.handleDingDingLogin && $options.handleDingDingLogin(...args))
             })
           ])
@@ -334,20 +353,18 @@ if (uni.restoreGlobal) {
       }, null, 40, ["src"])) : vue.createCommentVNode("v-if", true)
     ]);
   }
-  const PagesLoginIndex = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render$1], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/Login/index.vue"]]);
+  const PagesLoginIndex = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["render", _sfc_render$4], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/Login/index.vue"]]);
   const authMixin = {
     onLoad() {
       const pages = getCurrentPages();
       const currentPage = pages[pages.length - 1];
-      const url = `/${currentPage.route}`;
-      if (!checkPermission(url)) {
-        uni.redirectTo({
-          url: "/pages/Login/index"
-        });
-      }
+      `/${currentPage.route}`;
+    },
+    methods: {
+      checkPermission
     }
   };
-  const _sfc_main$1 = {
+  const _sfc_main$4 = {
     mixins: [authMixin],
     data() {
       return {};
@@ -362,7 +379,7 @@ if (uni.restoreGlobal) {
       }
     }
   };
-  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
     return vue.openBlock(), vue.createElementBlock("view", { class: "content" }, [
       vue.createElementVNode("text", null, "首页"),
       vue.createElementVNode("button", {
@@ -370,9 +387,153 @@ if (uni.restoreGlobal) {
       }, "退出登录")
     ]);
   }
-  const PagesHomeIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/Home/index.vue"]]);
+  const PagesHomeIndex = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["render", _sfc_render$3], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/Home/index.vue"]]);
+  const _sfc_main$3 = {
+    name: "User"
+  };
+  function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock("view", null, [
+      vue.createElementVNode("text", null, "我的")
+    ]);
+  }
+  const PagesUserIndex = /* @__PURE__ */ _export_sfc(_sfc_main$3, [["render", _sfc_render$2], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/User/index.vue"]]);
+  const _sfc_main$2 = {
+    data() {
+      return {};
+    },
+    onLoad(options) {
+      const code = options.code || "";
+      if (code) {
+        formatAppLog("log", "at pages/Auth/index.vue:16", "收到钉钉授权码:", code);
+        this.handleDingTalkAuth(code);
+      } else {
+        formatAppLog("error", "at pages/Auth/index.vue:19", "未收到钉钉授权码");
+        this.handleAuthError();
+      }
+    },
+    methods: {
+      // 处理钉钉授权
+      async handleDingTalkAuth(code) {
+        try {
+          const loginResult = await this.dingLoginToServer(code);
+          if (loginResult.success) {
+            uni.showToast({
+              title: "登录成功",
+              icon: "success"
+            });
+            setTimeout(() => {
+              uni.reLaunch({
+                url: "/pages/Home/index"
+              });
+            }, 1500);
+          } else {
+            throw new Error(loginResult.message || "登录失败");
+          }
+        } catch (error) {
+          formatAppLog("error", "at pages/Auth/index.vue:46", "处理钉钉授权失败:", error);
+          this.handleAuthError(error.message);
+        }
+      },
+      // 处理授权错误
+      handleAuthError(message = "登录失败，请重试") {
+        uni.showToast({
+          title: message,
+          icon: "none"
+        });
+        setTimeout(() => {
+          uni.reLaunch({
+            url: "/pages/Login/index"
+          });
+        }, 2e3);
+      },
+      // 调用服务端登录接口
+      dingLoginToServer(code) {
+        return new Promise((resolve, reject) => {
+          uni.request({
+            url: "http://your-api-domain/api/dingtalk/login",
+            method: "POST",
+            data: {
+              code
+            },
+            success: (res) => {
+              if (res.data && res.data.token) {
+                uni.setStorageSync("token", res.data.token);
+                uni.setStorageSync("userInfo", res.data.userInfo);
+                resolve({
+                  success: true,
+                  data: res.data
+                });
+              } else {
+                resolve({
+                  success: false,
+                  message: res.data.message || "登录失败"
+                });
+              }
+            },
+            fail: (err) => {
+              reject(err);
+            }
+          });
+        });
+      }
+    }
+  };
+  function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock("view", { class: "auth-page" }, [
+      vue.createElementVNode("text", null, "正在处理钉钉登录...")
+    ]);
+  }
+  const PagesAuthIndex = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["render", _sfc_render$1], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/Auth/index.vue"]]);
+  const _sfc_main$1 = {
+    data() {
+      return {
+        url: ""
+      };
+    },
+    onLoad(options) {
+      if (options.url) {
+        this.url = decodeURIComponent(options.url);
+        formatAppLog("log", "at pages/WebView/index.vue:17", "加载URL:", this.url);
+      }
+      uni.$on("auth_success", this.handleAuthSuccess);
+    },
+    onUnload() {
+      uni.$off("auth_success", this.handleAuthSuccess);
+    },
+    methods: {
+      // 处理WebView消息
+      handleMessage(event) {
+        formatAppLog("log", "at pages/WebView/index.vue:30", "收到WebView消息:", event);
+        const data = event.detail;
+        if (data.type === "auth_success" && data.code) {
+          this.handleAuthSuccess(data.code);
+        }
+      },
+      // 处理授权成功
+      handleAuthSuccess(code) {
+        formatAppLog("log", "at pages/WebView/index.vue:41", "授权成功，code:", code);
+        uni.navigateBack();
+        const loginPage = getApp().globalData.loginPage;
+        if (loginPage) {
+          loginPage.dingLoginToServer(code);
+        }
+      }
+    }
+  };
+  function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+    return vue.openBlock(), vue.createElementBlock("view", { class: "webview-container" }, [
+      vue.createElementVNode("web-view", {
+        src: $data.url,
+        onMessage: _cache[0] || (_cache[0] = (...args) => $options.handleMessage && $options.handleMessage(...args))
+      }, null, 40, ["src"])
+    ]);
+  }
+  const PagesWebViewIndex = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["render", _sfc_render], ["__file", "C:/Users/高/Documents/HBuilderProjects/奥凯/pages/WebView/index.vue"]]);
   __definePage("pages/Login/index", PagesLoginIndex);
   __definePage("pages/Home/index", PagesHomeIndex);
+  __definePage("pages/User/index", PagesUserIndex);
+  __definePage("pages/Auth/index", PagesAuthIndex);
+  __definePage("pages/WebView/index", PagesWebViewIndex);
   const _sfc_main = {
     onLaunch: function() {
       formatAppLog("log", "at App.vue:6", "App Launch");
